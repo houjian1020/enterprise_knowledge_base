@@ -1,0 +1,25 @@
+#================================================================
+# 依赖列表： fastapi==版本号
+# 终端执行 pip install -r requirements.txt 即可安装所有依赖
+#================================================================
+
+
+# Web 框架
+fastapi==
+uvicorn[standard]==
+python-multipart==
+
+# LangChain & AI 核心库
+langchain==
+langchain-community==
+langchain-huggingface==
+langgraph==
+
+# 向量数据库与 Embedding
+faiss-cpu==
+sentence-transformers==
+
+# 工具库
+python-dotenv==
+pydantic==
+pydantic-settings==

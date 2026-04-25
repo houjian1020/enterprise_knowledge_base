@@ -1,0 +1,64 @@
+2026-04-23 12:44:02 - INFO - app.core.graph:33 - --- 正在为租户 tenant_A 检索资料 ---
+2026-04-23 12:44:09 - INFO - app.core.rag_engine:58 - 为租户 tenant_A 初始化 RAG 引擎
+2026-04-23 12:44:09 - ERROR - app.core.rag_engine:79 - 加载向量库失败: Error in __cdecl faiss::FileIOReader::FileIOReader(const char *) at D:\a\faiss-wheels\faiss-wheels\third-party\faiss\faiss\impl\io.cpp:70: Error: 'f' failed: could not open storage\tenant_A\index\index.faiss for reading: No such file or directory
+Traceback (most recent call last):
+  File "D:\HJ\PythonProject\enterprise_knowledge_base\app\core\rag_engine.py", line 73, in load_vector_store
+    return FAISS.load_local(
+  File "E:\python\envs_dirs\py310\lib\site-packages\langchain_community\vectorstores\faiss.py", line 1205, in load_local
+    index = faiss.read_index(str(path / f"{index_name}.faiss"))
+  File "E:\python\envs_dirs\py310\lib\site-packages\faiss\swigfaiss_avx2.py", line 12913, in read_index
+    return _swigfaiss_avx2.read_index(*args)
+RuntimeError: Error in __cdecl faiss::FileIOReader::FileIOReader(const char *) at D:\a\faiss-wheels\faiss-wheels\third-party\faiss\faiss\impl\io.cpp:70: Error: 'f' failed: could not open storage\tenant_A\index\index.faiss for reading: No such file or directory
+2026-04-23 12:44:09 - INFO - app.core.graph:50 - --- 正在生成回答 ---
+2026-04-23 12:44:09 - WARNING - app.core.graph:61 - 未找到参考资料 (context_docs 为空)
+2026-04-23 12:44:09 - INFO - app.core.graph:85 - 使用通用模式回答（无参考资料）
+2026-04-23 12:44:09 - INFO - app.core.graph:91 - --- 回答生成完成 ---
+2026-04-23 12:44:10 - INFO - app.core.graph:96 - --- 回答生成内容 ---你好！很高兴见到你～有什么问题或需要帮助的地方，随时告诉我哦！😊
+2026-04-23 12:53:55 - INFO - app.core.graph:33 - --- 正在为租户 tenant_A 检索资料 ---
+2026-04-23 12:53:55 - INFO - app.core.rag_engine:58 - 为租户 tenant_A 初始化 RAG 引擎
+2026-04-23 12:53:55 - ERROR - app.core.rag_engine:79 - 加载向量库失败: Error in __cdecl faiss::FileIOReader::FileIOReader(const char *) at D:\a\faiss-wheels\faiss-wheels\third-party\faiss\faiss\impl\io.cpp:70: Error: 'f' failed: could not open storage\tenant_A\index\index.faiss for reading: No such file or directory
+Traceback (most recent call last):
+  File "D:\HJ\PythonProject\enterprise_knowledge_base\app\core\rag_engine.py", line 73, in load_vector_store
+    return FAISS.load_local(
+  File "E:\python\envs_dirs\py310\lib\site-packages\langchain_community\vectorstores\faiss.py", line 1205, in load_local
+    index = faiss.read_index(str(path / f"{index_name}.faiss"))
+  File "E:\python\envs_dirs\py310\lib\site-packages\faiss\swigfaiss_avx2.py", line 12913, in read_index
+    return _swigfaiss_avx2.read_index(*args)
+RuntimeError: Error in __cdecl faiss::FileIOReader::FileIOReader(const char *) at D:\a\faiss-wheels\faiss-wheels\third-party\faiss\faiss\impl\io.cpp:70: Error: 'f' failed: could not open storage\tenant_A\index\index.faiss for reading: No such file or directory
+2026-04-23 12:53:55 - INFO - app.core.graph:50 - --- 正在生成回答 ---
+2026-04-23 12:53:55 - WARNING - app.core.graph:61 - 未找到参考资料 (context_docs 为空)
+2026-04-23 12:53:55 - INFO - app.core.graph:85 - 使用通用模式回答（无参考资料）
+2026-04-23 12:53:55 - INFO - app.core.graph:91 - --- 回答生成完成 ---
+2026-04-23 12:53:56 - INFO - app.core.graph:96 - --- 回答生成内容 ---你好！很高兴见到你～有什么问题或需要帮助的地方，随时告诉我哦！😊
+2026-04-23 12:54:36 - INFO - app.core.graph:33 - --- 正在为租户 tenant_A 检索资料 ---
+2026-04-23 12:54:41 - INFO - app.core.rag_engine:58 - 为租户 tenant_A 初始化 RAG 引擎
+2026-04-23 12:54:42 - ERROR - app.core.rag_engine:79 - 加载向量库失败: Error in __cdecl faiss::FileIOReader::FileIOReader(const char *) at D:\a\faiss-wheels\faiss-wheels\third-party\faiss\faiss\impl\io.cpp:70: Error: 'f' failed: could not open storage\tenant_A\index\index.faiss for reading: No such file or directory
+Traceback (most recent call last):
+  File "D:\HJ\PythonProject\enterprise_knowledge_base\app\core\rag_engine.py", line 73, in load_vector_store
+    return FAISS.load_local(
+  File "E:\python\envs_dirs\py310\lib\site-packages\langchain_community\vectorstores\faiss.py", line 1205, in load_local
+    index = faiss.read_index(str(path / f"{index_name}.faiss"))
+  File "E:\python\envs_dirs\py310\lib\site-packages\faiss\swigfaiss_avx2.py", line 12913, in read_index
+    return _swigfaiss_avx2.read_index(*args)
+RuntimeError: Error in __cdecl faiss::FileIOReader::FileIOReader(const char *) at D:\a\faiss-wheels\faiss-wheels\third-party\faiss\faiss\impl\io.cpp:70: Error: 'f' failed: could not open storage\tenant_A\index\index.faiss for reading: No such file or directory
+2026-04-23 12:54:42 - INFO - app.core.graph:50 - --- 正在生成回答 ---
+2026-04-23 12:54:42 - WARNING - app.core.graph:61 - 未找到参考资料 (context_docs 为空)
+2026-04-23 12:54:42 - INFO - app.core.graph:85 - 使用通用模式回答（无参考资料）
+2026-04-23 12:54:43 - INFO - app.core.graph:91 - --- 回答生成完成 ---
+2026-04-23 12:54:43 - ERROR - app.core.graph:109 - LLM 调用失败: 'tuple' object has no attribute 'content'
+2026-04-23 12:57:59 - INFO - app.core.graph:33 - --- 正在为租户 tenant_A 检索资料 ---
+2026-04-23 12:58:05 - INFO - app.core.rag_engine:58 - 为租户 tenant_A 初始化 RAG 引擎
+2026-04-23 12:58:05 - ERROR - app.core.rag_engine:79 - 加载向量库失败: Error in __cdecl faiss::FileIOReader::FileIOReader(const char *) at D:\a\faiss-wheels\faiss-wheels\third-party\faiss\faiss\impl\io.cpp:70: Error: 'f' failed: could not open storage\tenant_A\index\index.faiss for reading: No such file or directory
+Traceback (most recent call last):
+  File "D:\HJ\PythonProject\enterprise_knowledge_base\app\core\rag_engine.py", line 73, in load_vector_store
+    return FAISS.load_local(
+  File "E:\python\envs_dirs\py310\lib\site-packages\langchain_community\vectorstores\faiss.py", line 1205, in load_local
+    index = faiss.read_index(str(path / f"{index_name}.faiss"))
+  File "E:\python\envs_dirs\py310\lib\site-packages\faiss\swigfaiss_avx2.py", line 12913, in read_index
+    return _swigfaiss_avx2.read_index(*args)
+RuntimeError: Error in __cdecl faiss::FileIOReader::FileIOReader(const char *) at D:\a\faiss-wheels\faiss-wheels\third-party\faiss\faiss\impl\io.cpp:70: Error: 'f' failed: could not open storage\tenant_A\index\index.faiss for reading: No such file or directory
+2026-04-23 12:58:05 - INFO - app.core.graph:50 - --- 正在生成回答 ---
+2026-04-23 12:58:05 - WARNING - app.core.graph:61 - 未找到参考资料 (context_docs 为空)
+2026-04-23 12:58:05 - INFO - app.core.graph:85 - 使用通用模式回答（无参考资料）
+2026-04-23 12:58:06 - INFO - app.core.graph:91 - --- 回答生成完成 ---
+2026-04-23 12:58:06 - ERROR - app.core.graph:109 - LLM 调用失败: 'tuple' object has no attribute 'content'
