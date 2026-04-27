@@ -63,6 +63,44 @@ class RagEngine:
         )
         log.info(f"为租户 {tenant_id} 初始化 RAG 引擎")
 
+    def file_load_and_split(self, file_path:str, filename:str)->List[Document]:
+        """
+        文档加载并分割
+        :param file_path: 文件在服务器上的绝对路径
+        :param filename: 原始文件名
+        :return: 分割后的文档列表
+        """
+
+        try:
+            # 1. 读取文件内容 (PDF/Word/txt)
+            # 1. 根据文件扩展名选择加载器 ===
+            file_extension = os.path.splitext(filename.lower())[1]
+
+            # 2. 文本分割,并保存到Document列表
+            loader = None
+
+            if file_extension == ".pdf":
+                loader = UnstructuredPDFLoader(file_path)
+            elif file_extension in [".doc", ".docx"]:
+                loader = UnstructuredWordDocumentLoader(file_path)
+            elif file_extension == ".md":
+                loader = UnstructuredMarkdownLoader(file_path)
+            elif file_extension == ".txt":
+                loader = TextLoader(file_path, encoding="utf-8")
+            else:
+                log.error(f"不支持的文件格式: {file_extension}")
+                return []
+
+            # 使用加载器读取文档
+            documents = loader.load()
+
+            # [变更] 使用文本分割器切分 Document 对象，而不是字符串
+            split_docs = self.text_splitter.split_documents(documents)
+            return split_docs
+        except Exception as e:
+            log.error(f"处理文档失败: {e}")
+            return []
+
 
     def load_vector_store(self)-> Optional[FAISS]:
         """
@@ -100,30 +138,8 @@ class RagEngine:
         """
 
         try:
-            # 1. 读取文件内容 (PDF/Word/txt)
-            # 1. 根据文件扩展名选择加载器 ===
-            file_extension = os.path.splitext(filename.lower())[1]
-
-            # 2. 文本分割,并保存到Document列表
-            loader = None
-
-            if file_extension == ".pdf":
-                loader = UnstructuredPDFLoader(file_path)
-            elif file_extension in [".doc", ".docx"]:
-                loader = UnstructuredWordDocumentLoader(file_path)
-            elif file_extension == ".md":
-                loader = UnstructuredMarkdownLoader(file_path)
-            elif file_extension == ".txt":
-                loader = TextLoader(file_path, encoding="utf-8")
-            else:
-                log.error(f"不支持的文件格式: {file_extension}")
-                return False
-
-            # 使用加载器读取文档
-            documents = loader.load()
-
             # [变更] 使用文本分割器切分 Document 对象，而不是字符串
-            split_docs = self.text_splitter.split_documents(documents)
+            split_docs = self.file_load_and_split(file_path, filename)
 
             # 3. 创建或更新向量库
             # 把硬盘里的向量库 → 读回内存使用
@@ -141,9 +157,58 @@ class RagEngine:
 
             return True
         except Exception as e:
-            log.error(f"处理文档失败: {e}")
+            log.error(f"向量化数据失败: {e}")
             return False
 
+    def delete_document(self, filename:str)->bool:
+        """
+        删除文档及其在向量库中的索引
+        :param filename: 原始文件名
+        :return: 是否成功
+        """
+        try:
+            # 文件在服务器上的绝对路径
+            file_path = os.path.join(self.files_path, filename)
+
+            # 1. 删除物理文件
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                log.info(f"物理文件已删除: {filename}")
+            else:
+                log.warning(f"物理文件不存在: {filename}")
+
+            # 2. 重建向量库 (因为 FAISS 本地版不支持简单的单条删除，我们需要“过滤重建”)
+            # 获取当前目录下所有剩余的文件
+            remaining_files = [f for f in os.listdir(self.files_path) if os.path.isfile(os.path.join(self.files_path, f))]
+
+            # 如果没有文件了，直接清空索引目录
+            if not remaining_files:
+                log.info("知识库已空，清空索引文件。")
+                # 删除 index.faiss 和 index.pkl
+                for index_file in ["index.faiss", "index.pkl"]:
+                    idx_path = os.path.join(self.index_path, index_file)
+                    if os.path.exists(idx_path):
+                        os.remove(idx_path)
+                return True
+            # 如果有剩余文件，重新加载并重建索引
+            log.info(f"正在重建索引，剩余文件数: {len(remaining_files)}")
+            all_documents = []
+
+            for r_file in remaining_files:
+                r_path = os.path.join(self.files_path, r_file)
+                # 加载并分割
+                all_documents.extend(self.file_load_and_split(r_path, r_file))
+
+            # 保存新索引
+            new_vector_store = FAISS.from_documents(all_documents, self.embeddings)
+            new_vector_store.save_local(self.index_path)
+
+            log.info(f"索引重建完成，已移除: {filename}")
+
+            return True
+        except Exception as e:
+            log.error(f"删除文档失败: {e}")
+            return False
 
     def search(self,query:str,k:int = settings.TOP_K)->List[Document]:
         """

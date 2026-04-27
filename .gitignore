@@ -10,3 +10,4 @@ storage/
 
 # --- 本地日志----
 app.log
+./app/app.log

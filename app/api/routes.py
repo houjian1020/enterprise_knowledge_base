@@ -72,6 +72,30 @@ async def upload_document(tenant_id:str = Form(...,description="租户ID"),file:
         raise HTTPException(status_code=500, detail="文件索引失败，请检查日志")
 
 
+@router.delete("/upload")
+async def delete_file(
+        filename: str,
+        tenant_id: str = Form(...)
+):
+    """
+    删除指定的文件及其索引
+    """
+    try:
+        # 1. 初始化该租户的引擎
+        engine = RagEngine(tenant_id=tenant_id)
+
+        # 2. 调用删除方法
+        success = engine.delete_document(filename)
+
+        if success:
+            return {"message": f"文件 {filename} 已成功删除"}
+        else:
+            raise HTTPException(status_code=400, detail="删除失败，请查看后端日志")
+
+    except Exception as e:
+        log.error(f"删除接口异常: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """

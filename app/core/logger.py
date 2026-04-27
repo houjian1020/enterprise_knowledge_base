@@ -39,6 +39,6 @@ def get_logger(name: str) -> logging.Logger:
 
     # 4. 将处理器添加到日志器
     logger.addHandler(console_handler)
-    logger.addHandler(file_handler)
+    #logger.addHandler(file_handler)  # 写日志到本地磁盘
 
     return logger
