@@ -15,6 +15,41 @@ log = get_logger(__name__)
 API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000/api/v1")
 
 
+# [新增] 1. 定义文件上传函数
+def upload_file(file, tenant_id):
+    """
+    处理文件上传的函数
+    参数: file(Gradio上传的文件对象), tenant_id(租户ID)
+    返回: 上传结果的字符串提示
+    """
+    if not file:
+        return "请先选择一个文件"
+
+    # Gradio 的文件组件返回的是一个包含 name 属性的对象，或者直接是路径
+    file_path = file.name if hasattr(file, 'name') else file
+
+    # 使用 requests 上传文件
+    try:
+        # 注意：我们需要将文件重新打开并以 multipart/form-data 格式上传
+        with open(file_path, "rb") as f:
+            # 构建 multipart/form-data 请求
+            files = {
+                'file': (os.path.basename(file_path), f, 'application/octet-stream')
+            }
+            data = {
+                'tenant_id': tenant_id
+            }
+            response = requests.post(f"{API_BASE_URL}/upload", files=files, data=data)
+
+        if response.status_code == 200:
+            result = response.json()
+            return f"✅ 上传成功: {result['filename']}"
+        else:
+            return f"❌ 上传失败: {response.json().get('detail', 'Unknown error')}"
+    except Exception as e:
+        return f"❌ 上传异常: {str(e)}"
+
+
 def chat_with_knowledge(question, history, tenant_id):
     """
     核心聊天函数（优化流式处理）
@@ -96,6 +131,18 @@ def build_ui():
                 info="不同租户的数据是物理隔离的"
             )
 
+        # [新增] 2. 添加文件上传组件
+        # type="filepath" 表示我们只需要文件路径
+        file_input = gr.File(
+            label="上传文档 (支持 PDF/Word/TXT/MD)",
+            type="filepath",
+            file_count="single",
+            file_types=[".pdf", ".doc", ".docx", ".txt", ".md"]
+        )
+
+        # [新增] 3. 添加上传触发按钮
+        upload_btn = gr.Button("📤 开始上传", variant="primary")
+
         # --- 核心聊天区 ---
         # ChatInterface 是 Gradio 专为聊天设计的组件
         chatbot = gr.ChatInterface(
@@ -114,6 +161,14 @@ def build_ui():
         # --- 底部状态栏 ---
         gr.Markdown("---")
         status_text = gr.Markdown("状态: 就绪")
+
+        # [新增] 4. 设置交互逻辑：点击按钮 -> 调用上传函数
+        # 这里我们将上传结果连接到状态栏显示
+        upload_btn.click(
+            fn=upload_file,
+            inputs=[file_input, tenant_id_input],
+            outputs=status_text
+        )
 
     return demo
 

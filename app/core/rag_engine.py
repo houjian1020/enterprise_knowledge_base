@@ -12,6 +12,12 @@ from langchain_core.messages import BaseMessage
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.documents import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import ( # 请添加到文件顶部的 import 区域
+    TextLoader,
+    UnstructuredPDFLoader,
+    UnstructuredWordDocumentLoader,
+    UnstructuredMarkdownLoader
+)
 
 # 引入配置
 from app.config import settings
@@ -64,8 +70,13 @@ class RagEngine:
         :return: FAISS 实例，如果不存在则返回 None
         """
 
-        # 检查租户文件是否存在
-        if not os.path.exists(self.files_path) or not os.path.exists(self.index_path):
+        # 检查租户索引文件是否存在
+        # FAISS 会生成 index.faiss 和 index.pkl 两个文件
+        index_file = os.path.join(self.index_path, "index.faiss")
+
+        # 如果索引文件不存在，直接返回 None，不报错
+        if not os.path.exists(index_file):
+            log.info(f"未找到向量索引文件: {index_file}，将创建新库。")
             return None
 
         try:
@@ -89,15 +100,30 @@ class RagEngine:
         """
 
         try:
-            # TODO 1. 读取文件内容 (这里简单处理，只读取文本，实际项目需处理PDF/Word)
-            # 演示项目暂且只支持 .txt 和 .md，后续可扩展
-            content = ""
-            with open(file_path, "r", encoding="utf-8") as f:
-                content = f.read()
+            # 1. 读取文件内容 (PDF/Word/txt)
+            # 1. 根据文件扩展名选择加载器 ===
+            file_extension = os.path.splitext(filename.lower())[1]
 
             # 2. 文本分割,并保存到Document列表
-            texts = self.text_splitter.split_text(content)
-            documents = [Document(page_content=t, metadata={"source": filename}) for t in texts]
+            loader = None
+
+            if file_extension == ".pdf":
+                loader = UnstructuredPDFLoader(file_path)
+            elif file_extension in [".doc", ".docx"]:
+                loader = UnstructuredWordDocumentLoader(file_path)
+            elif file_extension == ".md":
+                loader = UnstructuredMarkdownLoader(file_path)
+            elif file_extension == ".txt":
+                loader = TextLoader(file_path, encoding="utf-8")
+            else:
+                log.error(f"不支持的文件格式: {file_extension}")
+                return False
+
+            # 使用加载器读取文档
+            documents = loader.load()
+
+            # [变更] 使用文本分割器切分 Document 对象，而不是字符串
+            split_docs = self.text_splitter.split_documents(documents)
 
             # 3. 创建或更新向量库
             # 把硬盘里的向量库 → 读回内存使用
@@ -105,10 +131,10 @@ class RagEngine:
 
             if vector_store:
                 # 往已有的向量库里追加文档: 把文档向量化 → 存入内存
-                vector_store.add_documents(documents)
+                vector_store.add_documents(split_docs)
             else:
                 # 新建库: 把文档向量化 → 存入内存
-                vector_store = FAISS.from_documents(documents,self.embeddings)
+                vector_store = FAISS.from_documents(split_docs,self.embeddings)
 
             # 4. 把内存里的向量库 → 保存到硬盘
             vector_store.save_local(self.index_path)

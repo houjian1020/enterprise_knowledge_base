@@ -43,13 +43,16 @@ async def upload_document(tenant_id:str = Form(...,description="租户ID"),file:
     1. 保存文件到磁盘
     2. 调用 RAG 引擎进行向量化
     """
+    # 1.初始化向量模型
+    engine = RagEngine(tenant_id=tenant_id)
 
     # 1.构建租户目录
     tenant_dir = os.path.join(settings.STORAGE_BASE_PATH, tenant_id)
-    os.makedirs(tenant_dir, exist_ok=True)
+    # os.makedirs(tenant_dir, exist_ok=True)
 
     # 2.保存文件
-    file_path = os.path.join(tenant_dir, file.filename)
+    file_path = os.path.join(f"{tenant_dir}/files", file.filename)
+    log.info(f"file_path: {file_path}")
     try:
         with open(file_path, "wb") as buffer:
             # 写文件(最标准、最高效的保存文件方式、支持大文件)
@@ -60,7 +63,7 @@ async def upload_document(tenant_id:str = Form(...,description="租户ID"),file:
         raise HTTPException(status_code=400, detail=f"文件保存失败：{str(e)}")
 
     # 3.向量化到本地
-    engine = RagEngine(tenant_id=tenant_id)
+    #engine = RagEngine(tenant_id=tenant_id)
     success = engine.add_document(file_path=file_path,filename=file.filename)
 
     if success:
@@ -95,7 +98,7 @@ async def chat(request: ChatRequest):
             # 注意：是 astream_events，不是 astream
             async for event in rag_graph.astream_events(input_state, version="v2"):
                 event_type = event["event"]
-                log.info(f"事件类型: {event_type}")
+                #log.info(f"事件类型: {event_type}")
                 # 筛选 LLM 流式 token 事件
                 if event_type == "on_chat_model_stream":
                     chunk = event["data"]["chunk"]

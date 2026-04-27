@@ -24,7 +24,7 @@ llm = ChatOpenAI(
     api_key=os.getenv("DASHSCOPE_API_KEY"),
     base_url=os.getenv("DASHSCOPE_BASE_URL"),
     streaming=True,     # 开启流式模式
-    temperature=0.7
+    temperature=0.1    # 温度控制
 )
 
 def retrieval_node(state: AgentState):
@@ -57,7 +57,7 @@ async def generation_node(state: AgentState, config: RunnableConfig):
         # 如果 state['context_docs'] 存在且有内容
         if state.get('context_docs'):
             context_text = "\n\n".join([doc.page_content for doc in state['context_docs']])
-            log.info(f"找到参考资料，长度: {len(context_text)}")
+            log.info(f"找到参考资料: {context_text}")
         else:
             log.warning("未找到参考资料 (context_docs 为空)")
     except Exception as e:
@@ -92,7 +92,7 @@ async def generation_node(state: AgentState, config: RunnableConfig):
         # 只有传了 config，LangGraph 才能监听到内部的事件
         async for chunk in llm.astream([HumanMessage(content=prompt)], config=config):
             if chunk.content:
-                log.info(f"--- 流式生成内容 --- {chunk.content}")
+                #log.info(f"--- 流式生成内容 --- {chunk.content}")
                 chunks.append(chunk.content)
         full_text = "".join(chunks)
         # full_text = llm.invoke([HumanMessage(content=prompt)], config=config).content
