@@ -96,67 +96,84 @@ def delete_selected_file(filename, tenant_id):
         return f"❌ 异常: {str(e)}", gr.Dropdown()
 
 
-
 def chat_with_knowledge(question, history, tenant_id):
     """
-    核心聊天函数（优化流式处理）
-    参数：question(用户问题), history(聊天历史), tenant_id(租户ID)
+    核心聊天函数（100%兼容Gradio 4.x + 流式输出 + 引用溯源）
+    【修复】：只返回字符串，不返回history，彻底解决tuple报错
     """
     if not question.strip():
-        return "请输入有效的问题"
+        yield "⚠️ 请输入有效的问题！"
+        return
 
-    payload = {
-        "tenant_id": tenant_id,
-        "question": question
-    }
+    if not tenant_id.strip():
+        yield "⚠️ 请输入有效的租户ID！"
+        return
+
+    # 初始状态
+    final_answer = ""
+    current_sources = []
 
     try:
-        with requests.post(
-                f"{API_BASE_URL}/chat",
-                json=payload,
-                stream=True,
-                timeout=120
-        ) as response:
-            if response.status_code == 200:
-                final_answer = ""
+        response = requests.post(
+            f"{API_BASE_URL}/chat",
+            json={"tenant_id": tenant_id.strip(), "question": question.strip()},
+            stream=True,
+            timeout=120,
+            headers={"Accept": "text/event-stream"}
+        )
+        response.raise_for_status()
 
-                # 逐行读取 SSE
-                for line in response.iter_lines():
-                    if line:
-                        line_str = line.decode("utf-8")
+        for line in response.iter_lines(chunk_size=1024, decode_unicode=True):
+            if not line or not line.startswith("data: "):
+                continue
 
-                        # 处理 SSE 格式 (data: {...})
-                        if line_str.startswith("data: "):
-                            json_str = line_str.replace("data: ", "", 1)
-                            try:
-                                log.info(f"前端响应内容: {json_str}")
+            data_str = line[6:].strip()
+            if not data_str:
+                continue
 
-                                data = json.loads(json_str)
-                                chunk = data.get("answer", "")
-                                is_end = data.get("is_end", False)
+            try:
+                data = json.loads(data_str)
 
-                                if chunk:
-                                    final_answer += chunk
-                                    # 实时 Yield，实现打字机效果
-                                    yield final_answer
+                # ---------------------- 接收来源 ----------------------
+                if data.get("type") == "sources":
+                    current_sources = data.get("sources", [])
+                    log.info(f"【Sources】已捕获引用数据，数量: {len(current_sources)}")
+                    yield "🔍 正在检索参考资料..."
+                    continue
 
-                                if is_end:
-                                    # 结束信号，可以在这里拼接参考资料
-                                    sources = data.get("sources", [])
-                                    if sources:
-                                        source_text = "\n\n---\n**📚 参考资料:**\n" + "\n".join(
-                                            [f"- {s}" for s in sources])
-                                        yield final_answer + source_text
-                                    break
+                # ---------------------- 流式输出文本 ----------------------
+                chunk = data.get("answer", "")
+                is_end = data.get("is_end", False)
 
-                            except json.JSONDecodeError:
-                                continue
-            else:
-                yield f"❌ 后端错误: {response.status_code} {response.text}"
+                if chunk:
+                    final_answer += chunk
+                    yield final_answer  # ✅ 只返回字符串！Gradio最爱！
+
+                # ---------------------- 结束，拼接引用 ----------------------
+                if is_end:
+                    log.info("【Is End】收到结束信号")
+
+                    if current_sources:
+                        log.info("【Render】开始构建引用")
+                        refs_md = "\n\n### 📚 参考资料\n"
+                        for idx, ref in enumerate(current_sources, 1):
+                            source_path = ref.get("source", "").replace("\\", "/").replace("./", "")
+                            refs_md += f"{idx}. {source_path}\n"
+                        final_answer += refs_md
+
+                    log.info(f"【Render】最终长度: {len(final_answer)}")
+                    yield final_answer  # ✅ 最后返回完整内容
+                    return  # ✅ 干净退出
+
+            except json.JSONDecodeError:
+                continue
+
+        # 兜底
+        yield final_answer
 
     except Exception as e:
-        yield f"❌ 连接失败: {str(e)}"
-
+        log.error(f"异常: {str(e)}")
+        yield f"❌ 系统错误：{str(e)}"
 
 # ==========================================
 # 界面构建
@@ -210,7 +227,7 @@ def build_ui():
                         ["文档里主要讲了什么？", "tenant_A"],
                         ["请总结一下核心观点", "tenant_B"]
                     ],
-                    cache_examples=False
+                    cache_examples=False,
                 )
 
         # 状态显示

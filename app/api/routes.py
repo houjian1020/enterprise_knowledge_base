@@ -118,11 +118,49 @@ async def chat(request: ChatRequest):
         # 2. 定义生成器：这是流式的核心
         # 2. 流式生成器核心逻辑
         async def generate_stream():
+            # 用于存储引用数据
+            final_sources = []
+            # 标记是否已经发送了引用数据
+            sources_initialized = False
+
             # 【关键】直接遍历 graph 的流
             # 注意：是 astream_events，不是 astream
             async for event in rag_graph.astream_events(input_state, version="v2"):
                 event_type = event["event"]
-                #log.info(f"事件类型: {event_type}")
+                event_name = event.get("name", "unknown")
+                # 这行日志能帮你看到所有底层事件
+                log.info(f"--- Raw Event Captured --- Type: {event_type}, Name: {event_name}")
+
+                # --- 核心逻辑：捕获 retrieval 节点结束事件 ---
+                if event_type == "on_chain_end" and event_name == "retrieval":
+                    try:
+                        output_data = event.get("data", {}).get("output", {})
+                        retrieved_docs = output_data.get("context_docs", [])
+
+                        log.info(f"--- [RETRIEVAL] 捕获到检索结果 --- 数量: {len(retrieved_docs)}")
+                        if retrieved_docs:
+                            # 格式化引用数据
+                            sources_data = [
+                                {
+                                    "id": i + 1,
+                                    "content": doc.page_content,
+                                    "source": doc.metadata.get("source", "Unknown")
+                                }
+                                for i, doc in enumerate(retrieved_docs)
+                            ]
+                            # 发送一个特殊的引用数据包
+                            # 注意：这里我们使用一个特殊的 type 来标识
+                            ref_data = {
+                                "answer": "",
+                                "sources": sources_data,
+                                "is_end": False,
+                                "type": "sources"  # 新增一个 type 字段来区分
+                            }
+                            yield f"data: {json.dumps(ref_data, ensure_ascii=False)}\n\n"
+
+                    except Exception as e:
+                        log.error(f"提取引用失败: {e}")
+
                 # 筛选 LLM 流式 token 事件
                 if event_type == "on_chat_model_stream":
                     chunk = event["data"]["chunk"]
@@ -131,7 +169,8 @@ async def chat(request: ChatRequest):
                         data = {
                             "answer": chunk.content,
                             "sources": [],
-                            "is_end": False
+                            "is_end": False,
+                            "type": "token"
                         }
                         yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
 
