@@ -3,7 +3,7 @@
 # 定义数据格式（请求什么，返回什么）
 #================================================================
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional,Dict
 
 
 #================================================================
@@ -17,7 +17,8 @@ class ChatRequest(BaseModel):
     """聊天请求"""
     tenant_id: str = Field(..., description="租户ID，用于隔离数据")
     question: str = Field(..., description="用户的问题")
-
+    # 【多轮对话】新增：接收前端传来的对话历史 !!! 必须加这行
+    history: List[Dict] = []
 
 
 #================================================================

@@ -14,7 +14,7 @@ from streamlit import success
 
 # 导入我们之前写的组件
 from app.api.schemas import ChatRequest, ChatResponse, HealthResponse
-from langchain_core.messages import AIMessageChunk # 1. 新增导入
+from langchain_core.messages import AIMessageChunk, HumanMessage,AIMessage # 1. 新增导入
 from app.core.rag_engine import RagEngine
 from app.core.graph import rag_graph
 from app.config import settings
@@ -106,12 +106,36 @@ async def chat(request: ChatRequest):
     4. 支持流式输出
     """
     try:
+        # ==============================================
+        # 【多轮对话】接收前端传来的对话历史，并转为 LangChain 格式
+        # 来源：Gradio 聊天界面自动维护的 history
+        # 前端结构：[{"role":"user", "content":[{"text":"内容"}]}]
+        # ==============================================
+        history_messages = []
+        # 遍历前端传来的历史消息
+        for msg in request.history:
+            role = msg.get("role")  # 获取角色：user / assistant
+            content_list = msg.get("content", [])  # content是数组！
+
+            # 提取真正的文本内容
+            text = ""
+            if isinstance(content_list, list) and len(content_list) > 0:
+                text = content_list[0].get("text", "")  # 取出text字段
+
+            # 转为 LangChain 标准消息
+            if role == "user" and text:
+                history_messages.append(HumanMessage(content=text))
+            elif role == "assistant" and text:
+                history_messages.append(AIMessage(content=text))
+
+        log.info(f"【多轮对话】解析后历史消息数量：{len(history_messages)}")
+
         # 1. 准备 LangGraph 的输入状态
         # 注意：这里直接传入字典，LangGraph 会自动映射到 AgentState
         input_state = {
             "tenant_id": request.tenant_id,
             "question": request.question,
-            "messages": [],  # TODO 这里演示单次问答，多轮对话需维护历史
+            "messages": history_messages,  # 多轮对话核心
             "context_docs": []  # 这里应该先调用检索节点，为了演示先留空
         }
 

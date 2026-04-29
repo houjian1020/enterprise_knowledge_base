@@ -49,6 +49,7 @@ enterprise_knowledge_base/
 后端优化： 
     异步处理文件，并用MySQL 替代现在的本地文件记录管理。
     混合检索+重排序   trace检测   提示词防止注入   RAG效果评估   Git高星项目
+    session_id + redis存储历史对话（目前是从前端返回的）
 部署上线：
 
 

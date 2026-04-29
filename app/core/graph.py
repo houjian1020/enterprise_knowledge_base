@@ -50,6 +50,13 @@ async def generation_node(state: AgentState, config: RunnableConfig):
     """
     log.info("--- 正在生成回答 ---")
 
+    # 【多轮对话】拼接历史对话 → 让AI理解上下文
+    history_text = "\n".join([
+        f"{'用户' if isinstance(m, HumanMessage) else 'AI'}: {m.content}"
+        for m in state.get("messages", [])
+    ])
+    log.info(f"history_text: {history_text}")
+
     # 1. 安全地整理上下文
     # 使用 try-except 包裹，防止因为 context_docs 缺失或为空导致崩溃
     context_text = ""
@@ -72,6 +79,9 @@ async def generation_node(state: AgentState, config: RunnableConfig):
         参考资料：
         {context_text}
 
+        历史对话：
+        {history_text}
+
         用户问题：{state['question']}
 
         如果参考资料里没有答案，请如实告知。
@@ -80,7 +90,10 @@ async def generation_node(state: AgentState, config: RunnableConfig):
         # 如果没有资料，直接让 LLM 用自己的知识回答
         prompt = f"""
         你是一个智能助手。由于知识库中暂时没有相关文档，请你利用自己的通用知识回答用户的问题。
-
+        
+        历史对话：
+        {history_text}
+        
         用户问题：{state['question']}
         """
         log.info("使用通用模式回答（无参考资料）")
@@ -95,8 +108,10 @@ async def generation_node(state: AgentState, config: RunnableConfig):
                 #log.info(f"--- 流式生成内容 --- {chunk.content}")
                 chunks.append(chunk.content)
         full_text = "".join(chunks)
-        # full_text = llm.invoke([HumanMessage(content=prompt)], config=config).content
-        return {"messages": [AIMessage(content=full_text)]}
+        return {
+            "messages": [AIMessage(content=full_text)],
+            "answer": full_text
+        }
     except Exception as e:
         log.error(f"LLM 调用失败: {e}")
         return {"messages": [AIMessage(content="抱歉，系统内部出现错误。")]}

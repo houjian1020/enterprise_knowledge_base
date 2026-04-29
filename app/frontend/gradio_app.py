@@ -109,14 +109,26 @@ def chat_with_knowledge(question, history, tenant_id):
         yield "⚠️ 请输入有效的租户ID！"
         return
 
+    # ==============================================
+    # 【多轮对话】把 Gradio 历史 → 转为后端可识别的格式
+    # ==============================================
+    log.info(f"历史对话记录:{history}")
+
     # 初始状态
     final_answer = ""
     current_sources = []
 
     try:
+        # 【多轮对话】把 history 传给后端 /chat 接口
+        payload = {
+            "tenant_id": tenant_id,
+            "question": question,
+            "history": history  # 多轮对话必传
+        }
+
         response = requests.post(
             f"{API_BASE_URL}/chat",
-            json={"tenant_id": tenant_id.strip(), "question": question.strip()},
+            json=payload,
             stream=True,
             timeout=120,
             headers={"Accept": "text/event-stream"}

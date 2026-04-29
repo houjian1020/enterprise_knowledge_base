@@ -29,3 +29,6 @@ class AgentState(Dict):
 
     # 错误信息：用于前端展示错误
     error: str
+
+    # TODO 对话会话ID  后面把对话记录存储到数据库
+    session_id: str
