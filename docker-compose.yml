@@ -1,1 +1,47 @@
-# # 编排文件
+# 编排文件
+version: '3.8'
+
+services:
+  # 方案1：分模块部署（后端+前端）
+#  backend:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.backend
+#    ports:
+#      - "8000:8000"
+#    volumes:
+#      - ./app/storage:/app/storage  # 持久化文件存储
+#    restart: always
+#    networks:
+#      - app-network
+#
+#  frontend:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.frontend
+#    ports:
+#      - "7860:7860"
+#    depends_on:
+#      - backend  # 先启动后端
+#    restart: always
+#    networks:
+#      - app-network
+
+  # 方案2：一体化部署（注释上面，打开下面）
+   app:
+     build:
+       context: .
+       dockerfile: Dockerfile
+     ports:
+       - "8000:8000"
+       - "7860:7860"
+     volumes:
+       - ./app/storage:/app/storage  # 持久化文件存储
+     restart: always
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  storage:  # 持久化存储卷（可选）

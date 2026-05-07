@@ -1,6 +1,6 @@
 # 项目文档
 
-1.项目架构：
+1.项目架构： 终端执行：tree /f
 enterprise_knowledge_base/
 ├── app/
 │   ├── __init__.py
@@ -54,5 +54,14 @@ enterprise_knowledge_base/
 
 
  Git高星项目
+入门首选：LLM-Universe(Datawhale 的 LLM 学习系列)
+进阶实战 :Dify 和 Nanobot
 
+
+项目名称	核心领域	代码复杂度	推荐理由
+Dify	应用平台	⭐⭐⭐⭐⭐	学习企业级架构、RAG 完整链路、权限管理。
+Nanobot	个人助手	⭐⭐	学习如何用最少代码实现最核心的 Agent 功能（强烈推荐）。
+QwenPaw	个人助理	⭐⭐⭐	学习记忆管理、本地化部署及多渠道消息接入。
+Langflow	工作流编排	⭐⭐⭐⭐	学习如何将复杂的 AI 逻辑可视化、组件化。
+PostHog	产品分析	⭐⭐⭐⭐⭐	虽然是分析工具，但其内置的 AI 助理功能展示了如何在现有产品中嵌入 AI。
 

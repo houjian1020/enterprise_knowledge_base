@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     DASHSCOPE_API_KEY:str = ""
     DASHSCOPE_BASE_URL:str = ""
 
+
+    # --- mysql配置 ---
+    DATABASE_URL: str = 'mysql+pymysql://root:houj@123@localhost:3306/rag_db'
+
     # ================================================================
     # settings.STORAGE_BASE_PATH 自动读取 .env 中的值
     # .env 文件的优先级更高
